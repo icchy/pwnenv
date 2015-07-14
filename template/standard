@@ -1,0 +1,17 @@
+FROM %(DOCKER_IMAGE)s
+
+RUN apt-get update
+RUN apt-get install -y socat
+RUN apt-get install -y gcc-multilib
+
+RUN useradd -ms /bin/bash %(USER)s
+
+RUN %(BINARY)s /home/%(USER)s/%(BINARY)s
+RUN %(FLAG)s /home/%(USER)s/%(FLAG)s
+
+RUN chown -R root:%(USER)s /home/%(USER)s
+RUN chmod -R 655 /home/%(USER)s
+RUN chmod +rx /home/%(USER)s/%(BINARY)s
+RUN chmod 644 /home/%(USER)s/%(FLAG)s
+
+EXPOSE %(PORT)d
