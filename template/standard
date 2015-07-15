@@ -6,12 +6,12 @@ RUN apt-get install -y libc6-i386
 
 RUN useradd -ms /bin/bash %(USER)s
 
-ADD %(BINARY)s /home/%(USER)s/%(BINARY_NAME)s
+ADD %(BINARY)s /home/%(USER)s/%(BINARY)s
 ADD %(FLAG)s /home/%(USER)s/%(FLAG)s
 
 RUN chown -R root:%(USER)s /home/%(USER)s
 RUN chmod -R 655 /home/%(USER)s
-RUN chmod +rx /home/%(USER)s/%(BINARY_NAME)s
+RUN chmod +rx /home/%(USER)s/%(BINARY)s
 RUN chmod 644 /home/%(USER)s/%(FLAG)s
 
 %(OPTIONAL_RUN)s
