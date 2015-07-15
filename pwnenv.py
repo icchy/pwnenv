@@ -110,7 +110,7 @@ def main(m):
 
         libc_preload = ""
         if libc:
-            libc_preload = "LD_PRELOAD=/home/%(name)/%(libc)s "%{"name": name, "libc": libc_name}
+            libc_preload = "LD_PRELOAD=/home/%(name)s/%(libc)s "%{"name": name, "libc": libc_name}
 
         open(build_path+'/Dockerfile', 'w').write(dockerfile)
         open(build_path+'/port', 'w').write(str(port))
@@ -144,7 +144,7 @@ def main(m):
         name = sys.argv[1]
         build_path = orig_path+"/build/"+name
 
-        if os.system("docker ps | grep %s"%(name)) == 0:
+        if os.system("docker ps -a | grep %s"%(name)) == 0:
             print "%s is running at port %s"%(name, open(build_path+"/port").read())
         else:
             print "%s is not running"%(name)
@@ -154,7 +154,7 @@ def main(m):
         binary = sys.argv[1]
         name = path.basename(binary)
 
-        if os.system("docker ps | grep %s"%(name)) != 0:
+        if os.system("docker ps -a | grep %s"%(name)) != 0:
             print "%s is not running"%(name)
             sys.exit(1)
 
