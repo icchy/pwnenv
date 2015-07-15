@@ -65,7 +65,7 @@ def main(m):
 
         binary = args.binary
         binary_name = path.basename(binary)
-        flag = args.flag
+        flag = path.dirname(path.abspath(binary))+"/"+args.flag
         flag_name = path.basename(flag)
         libc = args.libc
         libc_name = None
