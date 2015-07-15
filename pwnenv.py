@@ -75,6 +75,9 @@ def main(m):
         port = get_port()
 
         build_path = orig_path+"/build/"+name
+        
+        if not os.path.exists(orig_path+"/build")
+            os.mkdir(orig_path+"/build")
 
         if os.system("docker ps | grep %s:latest"%(name)) == 0:
             print "%s is already running at port %s"%(name, open(build_path+"/port").read())
