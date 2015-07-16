@@ -13,8 +13,8 @@ DOCKER_BUILD_CMD = "docker build -t %(NAME)s ."
 DOCKER_RUN_CMD = "docker run -p %(PORT)d:%(PORT)d --name %(NAME)s -d %(NAME)s %(CMD)s"
 DOCKER_STOP_CMD = "docker kill %(NAME)s; docker rm %(NAME)s"
 
-XINETD_CMD = "%(PRELOAD)s socat tcp-listen:%(PORT)d,fork,reuseaddr exec:%(BINARY)s"
-FORK_CMD = "%(PRELOAD)s %(BINARY)s"
+XINETD_CMD = "socat tcp-listen:%(PORT)d,fork,reuseaddr exec:%(BINARY)s"
+FORK_CMD = "%(BINARY)s"
 
 CPU = None
 BIT = None
@@ -98,6 +98,8 @@ def main(m):
             libc_name = path.basename(libc)
             optional += "ADD %(libc)s /home/%(name)s/%(libc)s"%{
                     "libc": libc_name, "name": name}
+            optional += "\n"
+            optional += "ENV LD_PRELOAD /home/%(name)s/%(libc)s"%{"name": name, "libc": libc_name}
             os.system('cp %(src)s %(dst)s'%{
                     "src": libc, "dst": build_path+"/"+libc_name})
             assert check_elf(libc) == check_elf(args.binary), "binary and libc has wrong bit mode"
@@ -111,10 +113,6 @@ def main(m):
             "OPTIONAL_RUN": optional
         }
 
-        libc_preload = ""
-        if libc:
-            libc_preload = "LD_PRELOAD=/home/%(name)s/%(libc)s "%{"name": name, "libc": libc_name}
-
         open(build_path+'/Dockerfile', 'w').write(dockerfile)
         open(build_path+'/port', 'w').write(str(port))
         os.system('cp %(src)s %(dst)s'%{
@@ -126,15 +124,13 @@ def main(m):
         assert os.system(DOCKER_BUILD_CMD%{"NAME": name}) == 0, "error: docker build"
         if args.type == 'xinetd':
             assert os.system(DOCKER_RUN_CMD%{
-                    "NAME": name, "PORT": port, "CMD": libc_preload + XINETD_CMD%{
-                            "PORT": port, "BINARY": "/home/"+name+"/"+binary_name,
-                            "PRELOAD": libc_preload
+                    "NAME": name, "PORT": port, "CMD": XINETD_CMD%{
+                            "PORT": port, "BINARY": "/home/"+name+"/"+binary_name
                             }}) == 0, "error: docker run"
         elif args.type == 'fork-server':
             assert os.system(DOCKER_RUN_CMD%{
-                    "NAME": name, "PORT": port, "CMD": libc_preload + FORK_CMD%{
-                            "BINARY": "/home/"+name+"/"+binary_name,
-                            "PRELOAD": libc_preload
+                    "NAME": name, "PORT": port, "CMD": FORK_CMD%{
+                            "BINARY": "/home/"+name+"/"+binary_name
                             }}) == 0, "error: docker run"
 
         print "%(NAME)s is runnning at port %(PORT)d"%{"NAME": name, "PORT": port}
