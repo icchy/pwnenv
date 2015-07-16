@@ -27,10 +27,10 @@ def check_cmd():
 
 def check_elf(elfbin):
     res = commands.getoutput('file '+elfbin)
-    if 'ELF 32-bit LSB' in res: # 32bit
-        return 32
-    elif 'ELF 64-bit LSB' in res: # 64bit
-        return 64
+    if 'Intel 80386' in res: # 32bit
+        return 'x86'
+    elif 'x86-64,' in res: # 64bit
+        return 'x86_64'
     else:
         assert False, 'unsupported binary'
 
@@ -95,11 +95,22 @@ def main(m):
         optional = ""
 
         if libc:
+            from lib.libcpath import libcpath
             libc_name = path.basename(libc)
+            libc_bit = check_elf(libc)
+            assert libcpath.has_key(image), "libc_path not found for %s"%(image)
+            libc_path = libcpath[image][check_elf(libc)]
             optional += "ADD %(libc)s /home/%(name)s/%(libc)s"%{
                     "libc": libc_name, "name": name}
             optional += "\n"
-            optional += "ENV LD_PRELOAD /home/%(name)s/%(libc)s"%{"name": name, "libc": libc_name}
+            optional += "RUN chmod 755 /home/%(name)s/%(libc)s"%{
+                    "libc": libc_name, "name": name}
+            optional += "\n"
+            optional += "RUN rm %(libc_path)s"%{"libc_path": libc_path}
+            optional += "\n"
+            optional += "RUN ln -s /home/%(name)s/%(libc)s %(libc_path)s"%{
+                    "libc_path": libc_path, 
+                    "name": name, "libc": libc_name}
             os.system('cp %(src)s %(dst)s'%{
                     "src": libc, "dst": build_path+"/"+libc_name})
             assert check_elf(libc) == check_elf(args.binary), "binary and libc has wrong bit mode"
