@@ -76,7 +76,7 @@ def main(m):
 
         build_path = orig_path+"/build/"+name
         
-        if not os.path.exists(orig_path+"/build")
+        if not os.path.exists(orig_path+"/build"):
             os.mkdir(orig_path+"/build")
 
         if os.system("docker ps | grep %s:latest"%(name)) == 0:
