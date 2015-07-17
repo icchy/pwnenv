@@ -5,6 +5,9 @@ auto container build tool for pwn
 ```
 apt-get install docker.io
 sudo usermod -G <user> docker
+git clone https://github.com/icchyr/pwnenv
+cd pwnenv
+echo "export PATH=$PATH:`pwd`" >> ~/.bashrc
 ```
 
 ## Start daemon
