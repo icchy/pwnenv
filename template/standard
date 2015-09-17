@@ -16,6 +16,6 @@ RUN chmod 644 /home/%(USER)s/%(FLAG)s
 
 %(OPTIONAL_RUN)s
 
-USER %(USER)s
+USER root
 
 EXPOSE %(PORT)d

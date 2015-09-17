@@ -13,8 +13,8 @@ DOCKER_BUILD_CMD = "docker build -t %(NAME)s ."
 DOCKER_RUN_CMD = "docker run -p %(PORT)d:%(PORT)d --name %(NAME)s -d %(NAME)s %(CMD)s"
 DOCKER_STOP_CMD = "docker kill %(NAME)s; docker rm %(NAME)s"
 
-XINETD_CMD = "socat tcp-listen:%(PORT)d,fork,reuseaddr exec:%(BINARY)s"
-FORK_CMD = "%(BINARY)s"
+SOCAT_CMD = "socat tcp-listen:%(PORT)d,fork,reuseaddr exec:'sudo -u %(USER) %(BINARY)s'"
+BINARY_CMD = "sudo -u %(USER) %(BINARY)s %(ARGV)s"
 
 CPU = None
 BIT = None
@@ -43,8 +43,8 @@ def main(m):
     if m == 'start':
         parser = argparse.ArgumentParser(description="auto container build tool for pwn")
         parser.add_argument('binary', metavar='binary', help='binary file of problem')
-        parser.add_argument('-t', '--type', metavar='type', default='xinetd',
-                help='specify binary type: [xinetd | fork-server] (default: fork-server)')
+        parser.add_argument('-t', '--type', metavar='type', default='socat',
+                help='specify binary type: [socat | binary] (default: socat)')
         parser.add_argument('-p', '--port', dest='port', metavar='port', 
                 help='if here is blank, port would be assigned automatically')
         parser.add_argument('-f', '--flag', dest='flag', 
@@ -60,6 +60,9 @@ def main(m):
         parser.add_argument('-i', '--image', dest='image',
                 metavar='docker_image', default='ubuntu:14.04',
                 help='base image of Dockerfile (defualt: ubuntu:14.04)')
+        parser.add_argument('-a', '--args', dest='args',
+                metavar='arguments', default='',
+                help='binary arguments (type is binary required)')
 
         args = parser.parse_args()
 
@@ -133,16 +136,19 @@ def main(m):
 
         os.chdir(build_path)
         assert os.system(DOCKER_BUILD_CMD%{"NAME": name}) == 0, "error: docker build"
-        if args.type == 'xinetd':
+        if args.type == 'socat':
             assert os.system(DOCKER_RUN_CMD%{
-                    "NAME": name, "PORT": port, "CMD": XINETD_CMD%{
-                            "PORT": port, "BINARY": "/home/"+name+"/"+binary_name
+                    "NAME": name, "PORT": port, "CMD": SOCAT_CMD%{
+                            "PORT": port, "BINARY": "/home/"+name+"/"+binary_name,
+							"USER": name
                             }}) == 0, "error: docker run"
-        elif args.type == 'fork-server':
+        elif args.type == 'binary':
             assert os.system(DOCKER_RUN_CMD%{
-                    "NAME": name, "PORT": port, "CMD": FORK_CMD%{
-                            "BINARY": "/home/"+name+"/"+binary_name
-                            }}) == 0, "error: docker run"
+                    "NAME": name, "PORT": port, "CMD": BINARY_CMD%{
+						"USER": name,
+						"BINARY": "/home/"+name+"/"+binary_name,
+						"ARGV": args.args
+					}}) == 0, "error: docker run"
 
         print "%(NAME)s is runnning at port %(PORT)d"%{"NAME": name, "PORT": port}
 
