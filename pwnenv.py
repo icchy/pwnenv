@@ -10,11 +10,11 @@ orig_path = path.dirname(path.abspath(__file__))
 mode = ['start', 'status', 'restart', 'stop']
 
 DOCKER_BUILD_CMD = "docker build -t %(NAME)s ."
-DOCKER_RUN_CMD = "docker run -p %(PORT)d:%(PORT)d --name %(NAME)s -d %(NAME)s %(CMD)s"
+DOCKER_RUN_CMD = "docker run -w /home/%(NAME)s -p %(PORT)d:%(PORT)d --name %(NAME)s -d %(NAME)s %(CMD)s"
 DOCKER_STOP_CMD = "docker kill %(NAME)s; docker rm %(NAME)s"
 
-SOCAT_CMD = "socat tcp-listen:%(PORT)d,fork,reuseaddr exec:'sudo -u %(USER) %(BINARY)s'"
-BINARY_CMD = "sudo -u %(USER) %(BINARY)s %(ARGV)s"
+SOCAT_CMD = "socat tcp-listen:%(PORT)d,fork,reuseaddr exec:'%(BINARY)s'"
+BINARY_CMD = "sudo -u %(USER)s %(BINARY)s %(ARGV)s"
 
 CPU = None
 BIT = None
@@ -136,19 +136,17 @@ def main(m):
 
         os.chdir(build_path)
         assert os.system(DOCKER_BUILD_CMD%{"NAME": name}) == 0, "error: docker build"
+ 	bin_cmd = BINARY_CMD%{"USER": name, "BINARY": "./"+binary_name, "ARGV": args.args}
         if args.type == 'socat':
             assert os.system(DOCKER_RUN_CMD%{
                     "NAME": name, "PORT": port, "CMD": SOCAT_CMD%{
-                            "PORT": port, "BINARY": "/home/"+name+"/"+binary_name,
-							"USER": name
+                            	"PORT": port, 
+				"BINARY": bin_cmd
                             }}) == 0, "error: docker run"
         elif args.type == 'binary':
             assert os.system(DOCKER_RUN_CMD%{
-                    "NAME": name, "PORT": port, "CMD": BINARY_CMD%{
-						"USER": name,
-						"BINARY": "/home/"+name+"/"+binary_name,
-						"ARGV": args.args
-					}}) == 0, "error: docker run"
+                    "NAME": name, "PORT": port, "CMD": bin_cmd
+					}) == 0, "error: docker run"
 
         print "%(NAME)s is runnning at port %(PORT)d"%{"NAME": name, "PORT": port}
 
@@ -185,5 +183,3 @@ if len(sys.argv) >= 2 and sys.argv[1] in mode:
 else:
     print " ".join(['usage:', sys.argv[0], "["+"|".join(mode)+"]"])
     sys.exit(1)
-
-
